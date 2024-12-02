@@ -50,60 +50,69 @@
         }
     </style>
     <script>
-    // Function to load file names from the server
-    function loadFileNames() {
-        console.log("Calling google.script.run to fetch file names"); // Debugging
-        google.script.run
-            .withSuccessHandler(renderSidebar)
-            .withFailureHandler(error => {
-                console.error("Error fetching data:", error);
-            })
-            .getFileNames();
-    }
+        const API_KEY = 'AIzaSyCtq3NyN0H_lXUCjQPOCSUYn5_Vj4tZBaE'; // Replace with your API key
+        const SHEET_ID = '15kKP11vg-eZEsFBfWYdLCvQgaVRwHCxH2oI9gj2O8xs'; // Replace with your Google Sheet ID
+        const RANGE = 'Anisha!A:C'; // Adjust the range as needed
 
-    // Function to render the sidebar
-    function renderSidebar(data) {
-        console.log("Data received in renderSidebar:", data); // Debugging
-        const sidebar = document.getElementById('file-list');
-        if (!data || data.length === 0) {
-            sidebar.innerHTML = "<li>No files available</li>";
-            return;
+        // Function to load file names from Google Sheets
+        function loadFileNames() {
+            fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${RANGE}?key=${API_KEY}`)
+                .then(response => response.json())
+                .then(data => {
+                    const rows = data.values;
+                    if (!rows || rows.length === 0) {
+                        renderSidebar([]);
+                        return;
+                    }
+                    const files = rows.slice(1).map(row => ({ name: row[0], id: row[1] })); // Skip header
+                    renderSidebar(files);
+                })
+                .catch(error => {
+                    console.error("Error fetching data:", error);
+                });
         }
-        sidebar.innerHTML = data.map(file => `
-            <li>
-                <a href="#" onclick="showPDF('${file.id}')">${file.name}</a>
-            </li>
-        `).join('');
-    }
 
-    // Function to display PDF in the iframe
-    function showPDF(fileId) {
-        console.log("Showing PDF with fileId:", fileId); // Debugging
-        const iframe = document.getElementById('pdf-frame');
-        iframe.src = `https://drive.google.com/file/d/${fileId}/preview`;
-    }
-
-    // Prevent default shortcuts and context menu
-    document.addEventListener('keydown', function (event) {
-        if (event.ctrlKey || event.metaKey) {
-            switch (event.key) {
-                case 'p':
-                case 's':
-                case 'c':
-                case 'u':
-                case 'i':
-                    event.preventDefault();
-                    break;
+        // Function to render the sidebar
+        function renderSidebar(data) {
+            const sidebar = document.getElementById('file-list');
+            if (!data || data.length === 0) {
+                sidebar.innerHTML = "<li>No files available</li>";
+                return;
             }
+            sidebar.innerHTML = data.map(file => `
+                <li>
+                    <a href="#" onclick="showPDF('${file.id}')">${file.name}</a>
+                </li>
+            `).join('');
         }
-    });
 
-    document.addEventListener('contextmenu', function (event) {
-        event.preventDefault();
-    });
+        // Function to display PDF in the iframe
+        function showPDF(fileId ) {
+            const iframe = document.getElementById('pdf-frame');
+            iframe.src = `https://drive.google.com/file/d/${fileId}/preview`;
+        }
 
-    // Load files on page load
-    window.onload = loadFileNames;
+        // Prevent default shortcuts and context menu
+        document.addEventListener('keydown', function (event) {
+            if (event.ctrlKey || event.metaKey) {
+                switch (event.key) {
+                    case 'p':
+                    case 's':
+                    case 'c':
+                    case 'u':
+                    case 'i':
+                        event.preventDefault();
+                        break;
+                }
+            }
+        });
+
+        document.addEventListener('contextmenu', function (event) {
+            event.preventDefault();
+        });
+
+        // Load files on page load
+        window.onload = loadFileNames;
     </script>
 </head>
 <body>
@@ -114,7 +123,7 @@
     </div>
 
     <div style="width: 1000px; height: 780px; position: relative;">
-        <iframe id="pdf-frame" src="https://drive.google.com/file/d/1JFBrsZFkksuTVcwGexCGXwDR1Svj-Rxs/preview" width="1000" height="780" frameborder="0" scrolling="no" seamless=""></iframe>
+        <iframe id="pdf-frame" src="" width="1000" height="780" frameborder="0" scrolling="no" seamless=""></iframe>
         <div style="width: 80px; height: 80px; position: absolute; opacity: 0; right: 0px; top: 0px;"></div>
     </div>
 </body>
